@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Shield, UserX, UserCheck, Edit2 } from 'lucide-react';
+import { Users, Shield, UserX, UserCheck, Edit2, UserPlus, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -16,6 +16,10 @@ export function UserManager() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newUser, setNewUser] = useState({ email: '', password: '', full_name: '', role: 'user' as 'admin' | 'user' });
+  const [createError, setCreateError] = useState('');
+  const [createSuccess, setCreateSuccess] = useState('');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -73,6 +77,61 @@ export function UserManager() {
     await handleUpdateUser(userId, { role: newRole });
   };
 
+  const handleCreateUser = async () => {
+    setCreateError('');
+    setCreateSuccess('');
+
+    if (!newUser.email || !newUser.password) {
+      setCreateError('Email e senha são obrigatórios');
+      return;
+    }
+
+    if (newUser.password.length < 6) {
+      setCreateError('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: newUser.email,
+      password: newUser.password,
+      options: {
+        data: {
+          full_name: newUser.full_name
+        }
+      }
+    });
+
+    if (error) {
+      setCreateError(error.message);
+      return;
+    }
+
+    if (data.user) {
+      await supabase
+        .from('user_profiles')
+        .update({ role: newUser.role, full_name: newUser.full_name })
+        .eq('id', data.user.id);
+
+      await supabase.from('audit_logs').insert({
+        user_id: user?.id,
+        user_email: user?.email || '',
+        action: 'INSERT',
+        table_name: 'user_profiles',
+        record_id: data.user.id,
+        record_name: newUser.email,
+        new_data: { email: newUser.email, role: newUser.role, full_name: newUser.full_name }
+      });
+
+      setCreateSuccess(`Usuário ${newUser.email} criado com sucesso!`);
+      setNewUser({ email: '', password: '', full_name: '', role: 'user' });
+      setTimeout(() => {
+        setShowCreateForm(false);
+        setCreateSuccess('');
+        loadUsers();
+      }, 2000);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
@@ -85,10 +144,112 @@ export function UserManager() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Users className="w-6 h-6 text-slate-700" />
-        <h2 className="text-xl font-bold text-slate-800">Gerenciamento de Usuários</h2>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Users className="w-6 h-6 text-slate-700" />
+          <h2 className="text-xl font-bold text-slate-800">Gerenciamento de Usuários</h2>
+        </div>
+        <button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        >
+          <UserPlus className="w-4 h-4" />
+          Criar Novo Usuário
+        </button>
       </div>
+
+      {showCreateForm && (
+        <div className="bg-white border border-slate-300 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-slate-800">Criar Novo Usuário</h3>
+            <button
+              onClick={() => {
+                setShowCreateForm(false);
+                setCreateError('');
+                setCreateSuccess('');
+              }}
+              className="text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
+              <input
+                type="email"
+                value={newUser.email}
+                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="usuario@email.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Senha *</label>
+              <input
+                type="password"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="Mínimo 6 caracteres"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Nome Completo</label>
+              <input
+                type="text"
+                value={newUser.full_name}
+                onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="Nome do usuário"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Papel</label>
+              <select
+                value={newUser.role}
+                onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'admin' | 'user' })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="user">Usuário</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+          </div>
+
+          {createError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {createError}
+            </div>
+          )}
+
+          {createSuccess && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+              {createSuccess}
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              onClick={handleCreateUser}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+            >
+              Criar Usuário
+            </button>
+            <button
+              onClick={() => {
+                setShowCreateForm(false);
+                setCreateError('');
+                setNewUser({ email: '', password: '', full_name: '', role: 'user' });
+              }}
+              className="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition font-medium"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="bg-slate-50 rounded-lg overflow-hidden">
         <table className="w-full">

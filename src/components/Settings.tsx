@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Settings as SettingsIcon, Users, FileText, Info } from 'lucide-react';
+import { Settings as SettingsIcon, Users, FileText, Info, BarChart3, Cog } from 'lucide-react';
 import { UserManager } from './settings/UserManager';
 import { AuditLogs } from './settings/AuditLogs';
+import { Statistics } from './settings/Statistics';
+import { SystemConfig } from './settings/SystemConfig';
 
-type SettingsTab = 'users' | 'logs' | 'about';
+type SettingsTab = 'users' | 'logs' | 'statistics' | 'config' | 'about';
 
 export function Settings() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('users');
@@ -11,6 +13,8 @@ export function Settings() {
   const tabs = [
     { id: 'users' as SettingsTab, label: 'Usuários', icon: Users },
     { id: 'logs' as SettingsTab, label: 'Logs de Auditoria', icon: FileText },
+    { id: 'statistics' as SettingsTab, label: 'Estatísticas', icon: BarChart3 },
+    { id: 'config' as SettingsTab, label: 'Configurações', icon: Cog },
     { id: 'about' as SettingsTab, label: 'Sobre o Sistema', icon: Info }
   ];
 
@@ -49,6 +53,8 @@ export function Settings() {
       <div className="flex-1 overflow-auto p-6">
         {activeTab === 'users' && <UserManager />}
         {activeTab === 'logs' && <AuditLogs />}
+        {activeTab === 'statistics' && <Statistics />}
+        {activeTab === 'config' && <SystemConfig />}
         {activeTab === 'about' && (
           <div className="max-w-2xl space-y-6">
             <div className="bg-slate-50 rounded-lg p-6">
