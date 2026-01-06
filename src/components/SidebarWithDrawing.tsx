@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MapPin, Cable, Box, Wifi, LogOut, X, GitBranch, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { PopForm } from './forms/PopForm';
-import { CaboFormWithRoute } from './forms/CaboFormWithRoute';
+import { CaboForm } from './forms/CaboForm';
 import { CtoForm } from './forms/CtoForm';
 import { FibraManager } from './forms/FibraManager';
 import { CtoConexaoForm } from './forms/CtoConexaoForm';
@@ -10,14 +10,13 @@ import { CtoConexaoForm } from './forms/CtoConexaoForm';
 type ActiveForm = 'pop' | 'cabo' | 'cto' | 'cto_conexao' | 'fibra' | null;
 
 interface SidebarProps {
-  onDrawRoute: (caboId: string | null, color: string, existingRoute?: [number, number][]) => void;
   isDrawingRoute: boolean;
   onStopDrawing: () => void;
   onNavigate: (view: 'map' | 'settings') => void;
   currentView: 'map' | 'settings';
 }
 
-export function SidebarWithDrawing({ onDrawRoute, isDrawingRoute, onStopDrawing, onNavigate, currentView }: SidebarProps) {
+export function SidebarWithDrawing({ isDrawingRoute, onStopDrawing, onNavigate, currentView }: SidebarProps) {
   const [activeForm, setActiveForm] = useState<ActiveForm>(null);
   const { signOut, userRole } = useAuth();
 
@@ -148,9 +147,9 @@ export function SidebarWithDrawing({ onDrawRoute, isDrawingRoute, onStopDrawing,
 
           <div className="p-4">
             {activeForm === 'pop' && <PopForm />}
-            {activeForm === 'cabo' && <CaboFormWithRoute onDrawRoute={onDrawRoute} />}
+            {activeForm === 'cabo' && <CaboForm />}
             {activeForm === 'cto' && <CtoForm />}
-            {activeForm === 'cto_conexao' && <CtoConexaoForm onDrawRoute={onDrawRoute} />}
+            {activeForm === 'cto_conexao' && <CtoConexaoForm />}
             {activeForm === 'fibra' && <FibraManager />}
           </div>
 

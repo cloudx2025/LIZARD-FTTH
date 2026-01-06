@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { UserPlus, Edit2, Trash2, Shield, Eye } from 'lucide-react';
+import { UserPlus, Edit2, Shield, Eye } from 'lucide-react';
 
 interface UserProfile {
   id: string;

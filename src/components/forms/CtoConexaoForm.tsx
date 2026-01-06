@@ -20,7 +20,7 @@ interface CtoConexao {
 }
 
 interface CtoConexaoFormProps {
-  onDrawRoute: (conexaoId: string | null, color: string, existingRoute?: [number, number][]) => void;
+  onDrawRoute?: (conexaoId: string | null, color: string, existingRoute?: [number, number][]) => void;
 }
 
 export function CtoConexaoForm({ onDrawRoute }: CtoConexaoFormProps) {
@@ -55,7 +55,7 @@ export function CtoConexaoForm({ onDrawRoute }: CtoConexaoFormProps) {
 
   const handleDrawRoute = () => {
     const existingRoute = routeCoords || undefined;
-    onDrawRoute(editingId, formData.cor, existingRoute);
+    onDrawRoute?.(editingId, formData.cor, existingRoute);
   };
 
   const handleRouteComplete = (coordinates: [number, number][]) => {

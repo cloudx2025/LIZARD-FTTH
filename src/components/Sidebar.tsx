@@ -15,7 +15,7 @@ interface SidebarProps {
 
 export function Sidebar({ onNavigate, currentView }: SidebarProps) {
   const [activeForm, setActiveForm] = useState<ActiveForm>(null);
-  const { signOut, user, userRole } = useAuth();
+  const { signOut, userRole } = useAuth();
 
   const handleLogout = async () => {
     await signOut();
