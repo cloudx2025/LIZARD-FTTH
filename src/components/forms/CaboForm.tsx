@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Map } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { MapDrawer } from './MapDrawer';
 
 interface Cabo {
   id: string;
@@ -10,12 +11,15 @@ interface Cabo {
   capacidade: number;
   comprimento: number | null;
   descricao: string | null;
+  rota: [number, number][] | null;
 }
 
 export function CaboForm() {
   const [cabos, setCabos] = useState<Cabo[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showMapDrawer, setShowMapDrawer] = useState(false);
+  const [currentRoute, setCurrentRoute] = useState<[number, number][]>([]);
   const { user } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -48,6 +52,7 @@ export function CaboForm() {
       capacidade: parseInt(formData.capacidade),
       comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
       descricao: formData.descricao || null,
+      rota: currentRoute.length > 0 ? currentRoute : null,
       created_by: user?.id
     };
 
@@ -59,6 +64,7 @@ export function CaboForm() {
     }
 
     setFormData({ nome: '', tipo: 'fibra_optica', capacidade: '24', comprimento: '', descricao: '' });
+    setCurrentRoute([]);
     setIsAdding(false);
     loadCabos();
   };
@@ -71,6 +77,7 @@ export function CaboForm() {
       comprimento: cabo.comprimento?.toString() || '',
       descricao: cabo.descricao || ''
     });
+    setCurrentRoute(cabo.rota || []);
     setEditingId(cabo.id);
     setIsAdding(true);
   };
@@ -84,8 +91,17 @@ export function CaboForm() {
 
   const handleCancel = () => {
     setFormData({ nome: '', tipo: 'fibra_optica', capacidade: '24', comprimento: '', descricao: '' });
+    setCurrentRoute([]);
     setIsAdding(false);
     setEditingId(null);
+  };
+
+  const handleOpenMapDrawer = () => {
+    setShowMapDrawer(true);
+  };
+
+  const handleSaveRoute = (route: [number, number][]) => {
+    setCurrentRoute(route);
   };
 
   return (
@@ -159,6 +175,31 @@ export function CaboForm() {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Rota no Mapa</label>
+            <button
+              type="button"
+              onClick={handleOpenMapDrawer}
+              className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex items-center justify-center gap-2"
+            >
+              <Map className="w-5 h-5 text-blue-600" />
+              <span className="text-slate-700">
+                {currentRoute.length > 0
+                  ? `Rota definida (${currentRoute.length} pontos)`
+                  : 'Desenhar rota no mapa'}
+              </span>
+            </button>
+            {currentRoute.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setCurrentRoute([])}
+                className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+              >
+                Limpar rota
+              </button>
+            )}
+          </div>
+
           <div className="flex gap-2">
             <button
               type="submit"
@@ -187,6 +228,12 @@ export function CaboForm() {
                   {cabo.tipo.replace('_', ' ')} • {cabo.capacidade} fibras
                   {cabo.comprimento && ` • ${cabo.comprimento}m`}
                 </p>
+                {cabo.rota && cabo.rota.length > 0 && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <Map className="w-3 h-3 text-blue-600" />
+                    <span className="text-xs text-blue-600">Rota no mapa ({cabo.rota.length} pontos)</span>
+                  </div>
+                )}
                 {cabo.descricao && (
                   <p className="text-xs text-slate-500 mt-1">{cabo.descricao}</p>
                 )}
@@ -214,6 +261,15 @@ export function CaboForm() {
         <div className="text-center py-8 text-slate-500">
           Nenhum cabo cadastrado
         </div>
+      )}
+
+      {showMapDrawer && (
+        <MapDrawer
+          onClose={() => setShowMapDrawer(false)}
+          onSave={handleSaveRoute}
+          initialRoute={currentRoute}
+          cableColor="#3B82F6"
+        />
       )}
     </div>
   );
