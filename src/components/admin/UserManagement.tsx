@@ -55,11 +55,13 @@ export default function UserManagement() {
       if (authData.user) {
         const { error: profileError } = await supabase
           .from('user_profiles')
-          .update({
+          .insert({
+            id: authData.user.id,
+            email: authData.user.email,
             full_name: formData.full_name,
             role: formData.role,
-          })
-          .eq('id', authData.user.id);
+            is_active: true,
+          });
 
         if (profileError) throw profileError;
       }
