@@ -3,6 +3,7 @@ import { Plus, Trash2, Edit2, Map } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { MapDrawer } from './MapDrawer';
+import { logInsert, logUpdate, logDelete } from '../../lib/auditLogger';
 
 interface Cabo {
   id: string;
@@ -57,10 +58,15 @@ export function CaboForm() {
     };
 
     if (editingId) {
+      const oldCabo = cabos.find(c => c.id === editingId);
       await supabase.from('cabos').update(caboData).eq('id', editingId);
+      await logUpdate(user?.id, user?.email, 'cabos', editingId, formData.nome, oldCabo, caboData);
       setEditingId(null);
     } else {
-      await supabase.from('cabos').insert([caboData]);
+      const { data } = await supabase.from('cabos').insert([caboData]).select();
+      if (data && data[0]) {
+        await logInsert(user?.id, user?.email, 'cabos', data[0].id, formData.nome, caboData);
+      }
     }
 
     setFormData({ nome: '', tipo: 'fibra_optica', capacidade: '24', comprimento: '', descricao: '' });
@@ -84,7 +90,11 @@ export function CaboForm() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Deseja realmente excluir este cabo?')) {
+      const cabo = cabos.find(c => c.id === id);
       await supabase.from('cabos').delete().eq('id', id);
+      if (cabo) {
+        await logDelete(user?.id, user?.email, 'cabos', id, cabo.nome, cabo);
+      }
       loadCabos();
     }
   };
