@@ -6,7 +6,7 @@ interface UserProfile {
   id: string;
   email: string;
   full_name: string | null;
-  role: 'admin' | 'user';
+  role: 'admin' | 'viewer';
   created_at: string;
 }
 
@@ -19,7 +19,7 @@ export default function UserManagement() {
     email: '',
     password: '',
     full_name: '',
-    role: 'user' as 'admin' | 'user',
+    role: 'viewer' as 'admin' | 'viewer',
   });
 
   useEffect(() => {
@@ -55,27 +55,25 @@ export default function UserManagement() {
       if (authData.user) {
         const { error: profileError } = await supabase
           .from('user_profiles')
-          .insert({
-            id: authData.user.id,
-            email: authData.user.email,
+          .update({
             full_name: formData.full_name,
             role: formData.role,
-            is_active: true,
-          });
+          })
+          .eq('id', authData.user.id);
 
         if (profileError) throw profileError;
       }
 
       alert('Usuário criado com sucesso!');
       setShowCreateModal(false);
-      setFormData({ email: '', password: '', full_name: '', role: 'user' });
+      setFormData({ email: '', password: '', full_name: '', role: 'viewer' });
       loadUsers();
     } catch (error: any) {
       alert('Erro ao criar usuário: ' + error.message);
     }
   }
 
-  async function handleUpdateRole(userId: string, newRole: 'admin' | 'user') {
+  async function handleUpdateRole(userId: string, newRole: 'admin' | 'viewer') {
     try {
       const { error } = await supabase
         .from('user_profiles')
@@ -108,7 +106,7 @@ export default function UserManagement() {
 
       alert('Usuário atualizado com sucesso!');
       setEditingUser(null);
-      setFormData({ email: '', password: '', full_name: '', role: 'user' });
+      setFormData({ email: '', password: '', full_name: '', role: 'viewer' });
       loadUsers();
     } catch (error: any) {
       alert('Erro ao atualizar usuário: ' + error.message);
@@ -167,10 +165,10 @@ export default function UserManagement() {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <select
                     value={user.role}
-                    onChange={(e) => handleUpdateRole(user.id, e.target.value as 'admin' | 'user')}
+                    onChange={(e) => handleUpdateRole(user.id, e.target.value as 'admin' | 'viewer')}
                     className="text-sm border border-gray-300 rounded px-2 py-1"
                   >
-                    <option value="user">Usuário</option>
+                    <option value="viewer">Visualizador</option>
                     <option value="admin">Administrador</option>
                   </select>
                   <span className="ml-2">
@@ -254,10 +252,10 @@ export default function UserManagement() {
                 </label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'user' })}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'viewer' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="user">Usuário</option>
+                  <option value="viewer">Visualizador</option>
                   <option value="admin">Administrador</option>
                 </select>
               </div>
@@ -266,7 +264,7 @@ export default function UserManagement() {
                   type="button"
                   onClick={() => {
                     setShowCreateModal(false);
-                    setFormData({ email: '', password: '', full_name: '', role: 'user' });
+                    setFormData({ email: '', password: '', full_name: '', role: 'viewer' });
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
@@ -319,10 +317,10 @@ export default function UserManagement() {
                 </label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'user' })}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'viewer' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="user">Usuário</option>
+                  <option value="viewer">Visualizador</option>
                   <option value="admin">Administrador</option>
                 </select>
               </div>
@@ -331,7 +329,7 @@ export default function UserManagement() {
                   type="button"
                   onClick={() => {
                     setEditingUser(null);
-                    setFormData({ email: '', password: '', full_name: '', role: 'user' });
+                    setFormData({ email: '', password: '', full_name: '', role: 'viewer' });
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
