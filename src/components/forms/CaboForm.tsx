@@ -12,7 +12,7 @@ interface Cabo {
   capacidade: number;
   comprimento: number | null;
   descricao: string | null;
-  rota: [number, number][] | null;
+  coordenadas: [number, number][] | null;
 }
 
 export function CaboForm() {
@@ -53,7 +53,7 @@ export function CaboForm() {
       capacidade: parseInt(formData.capacidade),
       comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
       descricao: formData.descricao || null,
-      rota: currentRoute.length > 0 ? currentRoute : null,
+      coordenadas: currentRoute.length > 0 ? currentRoute : null,
       created_by: user?.id
     };
 
@@ -83,7 +83,7 @@ export function CaboForm() {
       comprimento: cabo.comprimento?.toString() || '',
       descricao: cabo.descricao || ''
     });
-    setCurrentRoute(cabo.rota || []);
+    setCurrentRoute(cabo.coordenadas || []);
     setEditingId(cabo.id);
     setIsAdding(true);
   };
@@ -238,10 +238,10 @@ export function CaboForm() {
                   {cabo.tipo.replace('_', ' ')} • {cabo.capacidade} fibras
                   {cabo.comprimento && ` • ${cabo.comprimento}m`}
                 </p>
-                {cabo.rota && cabo.rota.length > 0 && (
+                {cabo.coordenadas && cabo.coordenadas.length > 0 && (
                   <div className="flex items-center gap-1 mt-1">
                     <Map className="w-3 h-3 text-blue-600" />
-                    <span className="text-xs text-blue-600">Rota no mapa ({cabo.rota.length} pontos)</span>
+                    <span className="text-xs text-blue-600">Rota no mapa ({cabo.coordenadas.length} pontos)</span>
                   </div>
                 )}
                 {cabo.descricao && (
