@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import { LatLngExpression } from 'leaflet';
 import { supabase } from '../lib/supabase';
-import { createDatacenterIcon, createPOPIcon, createCTOIcon, getIconForType } from '../lib/mapIcons';
+import { getPOPIcon, getCTOIcon } from '../lib/mapIcons';
 import 'leaflet/dist/leaflet.css';
 
 interface POP {
@@ -73,12 +73,32 @@ export function MapView() {
   const [cabos, setCabos] = useState<Cabo[]>([]);
   const [ctoConexoes, setCtoConexoes] = useState<CtoConexao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [popColor, setPopColor] = useState('#10B981');
+  const [ctoColor, setCtoColor] = useState('#F59E0B');
 
   const defaultCenter: LatLngExpression = [-15.7801, -47.9292];
 
   useEffect(() => {
     loadData();
+    loadColors();
   }, []);
+
+  const loadColors = async () => {
+    const { data: popColorData } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'pop_color')
+      .maybeSingle();
+
+    const { data: ctoColorData } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'cto_color')
+      .maybeSingle();
+
+    if (popColorData?.value) setPopColor(popColorData.value as string);
+    if (ctoColorData?.value) setCtoColor(ctoColorData.value as string);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -193,25 +213,19 @@ export function MapView() {
         return null;
       })}
 
-      {pops.map((pop) => {
-        const icon = pop.icone === 'datacenter'
-          ? createDatacenterIcon('#3B82F6')
-          : getIconForType(pop.icone || 'router');
-
-        return (
-          <Marker
-            key={pop.id}
-            position={[pop.latitude, pop.longitude]}
-            icon={icon}
-          >
-            <Popup>
-              <div className="font-semibold text-blue-600">{pop.nome}</div>
-              <div className="text-sm text-slate-600">{pop.endereco}</div>
-              {pop.descricao && <div className="text-sm mt-1">{pop.descricao}</div>}
-            </Popup>
-          </Marker>
-        );
-      })}
+      {pops.map((pop) => (
+        <Marker
+          key={pop.id}
+          position={[pop.latitude, pop.longitude]}
+          icon={getPOPIcon(popColor)}
+        >
+          <Popup>
+            <div className="font-semibold" style={{ color: popColor }}>{pop.nome}</div>
+            <div className="text-sm text-slate-600">{pop.endereco}</div>
+            {pop.descricao && <div className="text-sm mt-1">{pop.descricao}</div>}
+          </Popup>
+        </Marker>
+      ))}
 
       {ctoConexoes.map((conexao) => {
         let positions: LatLngExpression[] = [];
@@ -249,24 +263,20 @@ export function MapView() {
         return null;
       })}
 
-      {ctos.map((cto) => {
-        const icon = createCTOIcon('#F59E0B');
-
-        return (
-          <Marker
-            key={cto.id}
-            position={[cto.latitude, cto.longitude]}
-            icon={icon}
-          >
-            <Popup>
-              <div className="font-semibold text-orange-600">{cto.nome}</div>
-              {cto.endereco && <div className="text-sm text-slate-600">{cto.endereco}</div>}
-              <div className="text-sm text-slate-600">Capacidade: {cto.capacidade} portas</div>
-              <div className="text-sm text-slate-600">Status: {cto.status}</div>
-            </Popup>
-          </Marker>
-        );
-      })}
+      {ctos.map((cto) => (
+        <Marker
+          key={cto.id}
+          position={[cto.latitude, cto.longitude]}
+          icon={getCTOIcon(ctoColor)}
+        >
+          <Popup>
+            <div className="font-semibold" style={{ color: ctoColor }}>{cto.nome}</div>
+            {cto.endereco && <div className="text-sm text-slate-600">{cto.endereco}</div>}
+            <div className="text-sm text-slate-600">Capacidade: {cto.capacidade} portas</div>
+            <div className="text-sm text-slate-600">Status: {cto.status}</div>
+          </Popup>
+        </Marker>
+      ))}
     </MapContainer>
   );
 }

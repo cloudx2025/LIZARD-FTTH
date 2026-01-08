@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Map } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { MapDrawer } from './MapDrawer';
+import { AdvancedRouteEditor } from './AdvancedRouteEditor';
 import { logInsert, logUpdate, logDelete } from '../../lib/auditLogger';
 
 interface Cabo {
@@ -274,11 +274,12 @@ export function CaboForm() {
       )}
 
       {showMapDrawer && (
-        <MapDrawer
+        <AdvancedRouteEditor
           onClose={() => setShowMapDrawer(false)}
           onSave={handleSaveRoute}
           initialRoute={currentRoute}
-          cableColor="#3B82F6"
+          routeColor="#3B82F6"
+          title="Desenhar Rota do Cabo"
         />
       )}
     </div>
