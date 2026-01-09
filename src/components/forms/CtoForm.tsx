@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { logInsert, logUpdate, logDelete } from '../../lib/auditLogger';
+import { iconTypes } from '../../lib/mapIcons';
 
 interface Cabo {
   id: string;
@@ -69,32 +69,10 @@ export function CtoForm() {
     };
 
     if (editingId) {
-      const oldCto = ctos.find(c => c.id === editingId);
       await supabase.from('ctos').update(ctoData).eq('id', editingId);
-
-      await logUpdate(
-        user?.id,
-        user?.email,
-        'ctos',
-        editingId,
-        formData.nome,
-        oldCto,
-        ctoData
-      );
       setEditingId(null);
     } else {
-      const { data } = await supabase.from('ctos').insert([ctoData]).select();
-
-      if (data && data[0]) {
-        await logInsert(
-          user?.id,
-          user?.email,
-          'ctos',
-          data[0].id,
-          formData.nome,
-          ctoData
-        );
-      }
+      await supabase.from('ctos').insert([ctoData]);
     }
 
     setFormData({
@@ -129,20 +107,7 @@ export function CtoForm() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Deseja realmente excluir esta CTO?')) {
-      const cto = ctos.find(c => c.id === id);
       await supabase.from('ctos').delete().eq('id', id);
-
-      if (cto) {
-        await logDelete(
-          user?.id,
-          user?.email,
-          'ctos',
-          id,
-          cto.nome,
-          cto
-        );
-      }
-
       loadData();
       window.location.reload();
     }
@@ -267,13 +232,22 @@ export function CtoForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Tipo de Ícone
-            </label>
-            <div className="p-3 bg-slate-100 rounded-lg border border-slate-300">
-              <p className="text-sm text-slate-700">
-                <strong>Pin</strong> - Todos os CTOs usam o ícone de pin no mapa
-              </p>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Ícone no Mapa</label>
+            <div className="grid grid-cols-2 gap-2">
+              {iconTypes.map((icon) => (
+                <button
+                  key={icon.value}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, icone: icon.value })}
+                  className={`p-3 border-2 rounded-lg transition flex flex-col items-center gap-1 ${
+                    formData.icone === icon.value
+                      ? 'border-red-600 bg-red-50'
+                      : 'border-slate-300 hover:border-slate-400'
+                  }`}
+                >
+                  <span className="text-xs font-medium text-slate-700">{icon.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 

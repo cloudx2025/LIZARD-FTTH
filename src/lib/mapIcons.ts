@@ -1,51 +1,66 @@
-import L from 'leaflet';
+import { DivIcon } from 'leaflet';
 
-export function createDatacenterIcon(color: string = '#10B981', size: number = 44) {
-  const svgIcon = `
-    <svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="11" fill="${color}" opacity="0.3"/>
-      <rect x="6" y="5" width="12" height="3.5" fill="${color}" rx="1"/>
-      <rect x="6" y="10" width="12" height="3.5" fill="${color}" rx="1"/>
-      <rect x="6" y="15" width="12" height="3.5" fill="${color}" rx="1"/>
-      <circle cx="8" cy="6.7" r="0.9" fill="white"/>
-      <circle cx="8" cy="11.7" r="0.9" fill="white"/>
-      <circle cx="8" cy="16.7" r="0.9" fill="white"/>
-      <circle cx="10.5" cy="6.7" r="0.9" fill="white"/>
-      <circle cx="10.5" cy="11.7" r="0.9" fill="white"/>
-      <circle cx="10.5" cy="16.7" r="0.9" fill="white"/>
-    </svg>
-  `;
+export const iconTypes = [
+  { value: 'datacenter', label: 'Datacenter' },
+  { value: 'pin', label: 'Pin Localização' }
+];
 
-  return L.divIcon({
-    html: svgIcon,
-    className: 'custom-datacenter-icon',
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2],
+const createDatacenterIcon = (color: string, strokeColor: string) => {
+  return new DivIcon({
+    html: `
+      <div style="position: relative;">
+        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="18" fill="${color}" stroke="${strokeColor}" stroke-width="2"/>
+          <rect x="10" y="8" width="20" height="6" fill="white" rx="1"/>
+          <rect x="10" y="16" width="20" height="6" fill="white" rx="1"/>
+          <rect x="10" y="24" width="20" height="6" fill="white" rx="1"/>
+          <circle cx="26" cy="11" r="1.2" fill="${color}"/>
+          <circle cx="26" cy="19" r="1.2" fill="${color}"/>
+          <circle cx="26" cy="27" r="1.2" fill="${color}"/>
+          <line x1="13" y1="11" x2="22" y2="11" stroke="${color}" stroke-width="1"/>
+          <line x1="13" y1="19" x2="22" y2="19" stroke="${color}" stroke-width="1"/>
+          <line x1="13" y1="27" x2="22" y2="27" stroke="${color}" stroke-width="1"/>
+        </svg>
+      </div>
+    `,
+    className: 'custom-map-icon',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -20]
   });
-}
+};
 
-export function createPinIcon(color: string = '#F59E0B', size: number = 40) {
-  const svgIcon = `
-    <svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="${color}"/>
-      <circle cx="12" cy="9" r="2.5" fill="white"/>
-    </svg>
-  `;
-
-  return L.divIcon({
-    html: svgIcon,
-    className: 'custom-pin-icon',
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size],
-    popupAnchor: [0, -size],
+const createPinIcon = (color: string, strokeColor: string) => {
+  return new DivIcon({
+    html: `
+      <div style="position: relative;">
+        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 5 C13 5 8 10 8 17 C8 25 20 35 20 35 C20 35 32 25 32 17 C32 10 27 5 20 5 Z" fill="${color}" stroke="${strokeColor}" stroke-width="2"/>
+          <circle cx="20" cy="17" r="5" fill="white"/>
+        </svg>
+      </div>
+    `,
+    className: 'custom-map-icon',
+    iconSize: [40, 40],
+    iconAnchor: [20, 35],
+    popupAnchor: [0, -35]
   });
-}
+};
 
-export function getPOPIcon(color: string = '#10B981') {
-  return createDatacenterIcon(color);
-}
+const popIcons: Record<string, DivIcon> = {
+  datacenter: createDatacenterIcon('#2563eb', '#1e40af'),
+  pin: createPinIcon('#2563eb', '#1e40af')
+};
 
-export function getCTOIcon(color: string = '#F59E0B') {
-  return createPinIcon(color);
-}
+const ctoIcons: Record<string, DivIcon> = {
+  datacenter: createDatacenterIcon('#dc2626', '#991b1b'),
+  pin: createPinIcon('#dc2626', '#991b1b')
+};
+
+export const getPopIcon = (iconType: string = 'datacenter'): DivIcon => {
+  return popIcons[iconType] || popIcons.datacenter;
+};
+
+export const getCtoIcon = (iconType: string = 'datacenter'): DivIcon => {
+  return ctoIcons[iconType] || ctoIcons.datacenter;
+};

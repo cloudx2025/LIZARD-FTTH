@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { logInsert, logUpdate, logDelete } from '../../lib/auditLogger';
+import { iconTypes } from '../../lib/mapIcons';
 
 interface POP {
   id: string;
@@ -56,35 +56,13 @@ export function PopForm() {
     };
 
     if (editingId) {
-      const oldPop = pops.find(p => p.id === editingId);
       await supabase
         .from('pops')
         .update(popData)
         .eq('id', editingId);
-
-      await logUpdate(
-        user?.id,
-        user?.email,
-        'pops',
-        editingId,
-        formData.nome,
-        oldPop,
-        popData
-      );
       setEditingId(null);
     } else {
-      const { data } = await supabase.from('pops').insert([popData]).select();
-
-      if (data && data[0]) {
-        await logInsert(
-          user?.id,
-          user?.email,
-          'pops',
-          data[0].id,
-          formData.nome,
-          popData
-        );
-      }
+      await supabase.from('pops').insert([popData]);
     }
 
     setFormData({ nome: '', latitude: '', longitude: '', endereco: '', descricao: '', icone: 'datacenter' });
@@ -108,20 +86,7 @@ export function PopForm() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Deseja realmente excluir este POP?')) {
-      const pop = pops.find(p => p.id === id);
       await supabase.from('pops').delete().eq('id', id);
-
-      if (pop) {
-        await logDelete(
-          user?.id,
-          user?.email,
-          'pops',
-          id,
-          pop.nome,
-          pop
-        );
-      }
-
       loadPops();
       window.location.reload();
     }
@@ -203,13 +168,22 @@ export function PopForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Tipo de Ícone
-            </label>
-            <div className="p-3 bg-slate-100 rounded-lg border border-slate-300">
-              <p className="text-sm text-slate-700">
-                <strong>Datacenter</strong> - Todos os POPs usam o ícone de datacenter no mapa
-              </p>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Ícone no Mapa</label>
+            <div className="grid grid-cols-2 gap-2">
+              {iconTypes.map((icon) => (
+                <button
+                  key={icon.value}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, icone: icon.value })}
+                  className={`p-3 border-2 rounded-lg transition flex flex-col items-center gap-1 ${
+                    formData.icone === icon.value
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-slate-300 hover:border-slate-400'
+                  }`}
+                >
+                  <span className="text-xs font-medium text-slate-700">{icon.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
