@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, Map, MapPin } from 'lucide-react';
+import { Plus, Trash2, Edit2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { useRouteDrawing } from '../../contexts/RouteDrawingContext';
-import { logInsert, logUpdate, logDelete } from '../../lib/auditLogger';
 
 interface CTO {
   id: string;
@@ -17,7 +15,6 @@ interface CtoConexao {
   cto_destino_id: string | null;
   cor: string;
   status: string;
-  coordenadas: any;
 }
 
 export function CtoConexaoForm() {
@@ -26,7 +23,6 @@ export function CtoConexaoForm() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const { user } = useAuth();
-  const { isDrawing, currentRoute, startDrawing, stopDrawing, setRoute, clearRoute } = useRouteDrawing();
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -53,30 +49,20 @@ export function CtoConexaoForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isDrawing) {
-      stopDrawing();
-    }
-
     const conexaoData = {
       nome: formData.nome,
       cto_origem_id: formData.cto_origem_id || null,
       cto_destino_id: formData.cto_destino_id || null,
       cor: formData.cor,
-      coordenadas: currentRoute.length > 0 ? JSON.stringify(currentRoute) : null,
       status: formData.status,
       created_by: user?.id
     };
 
     if (editingId) {
-      const oldConexao = conexoes.find(c => c.id === editingId);
       await supabase.from('cto_conexoes').update(conexaoData).eq('id', editingId);
-      await logUpdate(user?.id, user?.email, 'cto_conexoes', editingId, formData.nome, oldConexao, conexaoData);
       setEditingId(null);
     } else {
-      const { data } = await supabase.from('cto_conexoes').insert([conexaoData]).select();
-      if (data && data[0]) {
-        await logInsert(user?.id, user?.email, 'cto_conexoes', data[0].id, formData.nome, conexaoData);
-      }
+      await supabase.from('cto_conexoes').insert([conexaoData]).select();
     }
 
     setFormData({
@@ -86,7 +72,6 @@ export function CtoConexaoForm() {
       cor: '#FF6600',
       status: 'ativo'
     });
-    clearRoute();
     setIsAdding(false);
     loadData();
     window.dispatchEvent(new Event('cto-conexoes-updated'));
@@ -101,30 +86,13 @@ export function CtoConexaoForm() {
       status: conexao.status
     });
 
-    if (conexao.coordenadas) {
-      try {
-        const coords = typeof conexao.coordenadas === 'string'
-          ? JSON.parse(conexao.coordenadas)
-          : conexao.coordenadas;
-        setRoute(coords);
-      } catch (e) {
-        clearRoute();
-      }
-    } else {
-      clearRoute();
-    }
-
     setEditingId(conexao.id);
     setIsAdding(true);
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Deseja realmente excluir esta conexão?')) {
-      const conexao = conexoes.find(c => c.id === id);
       await supabase.from('cto_conexoes').delete().eq('id', id);
-      if (conexao) {
-        await logDelete(user?.id, user?.email, 'cto_conexoes', id, conexao.nome, conexao);
-      }
       loadData();
     }
   };
@@ -137,20 +105,8 @@ export function CtoConexaoForm() {
       cor: '#FF6600',
       status: 'ativo'
     });
-    clearRoute();
-    if (isDrawing) {
-      stopDrawing();
-    }
     setIsAdding(false);
     setEditingId(null);
-  };
-
-  const handleToggleDrawing = () => {
-    if (isDrawing) {
-      stopDrawing();
-    } else {
-      startDrawing(currentRoute);
-    }
   };
 
   const getCtoName = (ctoId: string | null) => {
@@ -234,44 +190,6 @@ export function CtoConexaoForm() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Rota no Mapa</label>
-            <button
-              type="button"
-              onClick={handleToggleDrawing}
-              className={`w-full px-4 py-3 border-2 rounded-lg transition flex items-center justify-center gap-2 ${
-                isDrawing
-                  ? 'border-green-500 bg-green-50 text-green-700'
-                  : 'border-slate-300 hover:border-orange-500 hover:bg-orange-50 text-slate-700'
-              }`}
-            >
-              {isDrawing ? (
-                <>
-                  <MapPin className="w-5 h-5" />
-                  <span>Desenhando rota... ({currentRoute.length} pontos)</span>
-                </>
-              ) : (
-                <>
-                  <Map className="w-5 h-5 text-orange-600" />
-                  <span>
-                    {currentRoute.length > 0
-                      ? `Rota definida (${currentRoute.length} pontos) - Clique para editar`
-                      : 'Desenhar rota no mapa principal'}
-                  </span>
-                </>
-              )}
-            </button>
-            {currentRoute.length > 0 && !isDrawing && (
-              <button
-                type="button"
-                onClick={clearRoute}
-                className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
-              >
-                Limpar rota
-              </button>
-            )}
-          </div>
-
           <div className="flex gap-2">
             <button
               type="submit"
@@ -307,7 +225,6 @@ export function CtoConexaoForm() {
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
                   {conexao.status}
-                  {conexao.coordenadas && ' • Rota personalizada'}
                 </p>
               </div>
               <div className="flex gap-1">

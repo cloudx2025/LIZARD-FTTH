@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, Map, MapPin } from 'lucide-react';
+import { Plus, Trash2, Edit2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { useRouteDrawing } from '../../contexts/RouteDrawingContext';
-import { logInsert, logUpdate, logDelete } from '../../lib/auditLogger';
 
 interface Cabo {
   id: string;
@@ -12,7 +10,6 @@ interface Cabo {
   capacidade: number;
   comprimento: number | null;
   descricao: string | null;
-  coordenadas: [number, number][] | null;
   cor: string;
 }
 
@@ -21,7 +18,6 @@ export function CaboForm() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const { user } = useAuth();
-  const { isDrawing, currentRoute, startDrawing, stopDrawing, setRoute, clearRoute } = useRouteDrawing();
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -48,35 +44,24 @@ export function CaboForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isDrawing) {
-      stopDrawing();
-    }
-
     const caboData = {
       nome: formData.nome,
       tipo: formData.tipo,
       capacidade: parseInt(formData.capacidade),
       comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
       descricao: formData.descricao || null,
-      coordenadas: currentRoute.length > 0 ? currentRoute : null,
       cor: formData.cor,
       created_by: user?.id
     };
 
     if (editingId) {
-      const oldCabo = cabos.find(c => c.id === editingId);
       await supabase.from('cabos').update(caboData).eq('id', editingId);
-      await logUpdate(user?.id, user?.email, 'cabos', editingId, formData.nome, oldCabo, caboData);
       setEditingId(null);
     } else {
-      const { data } = await supabase.from('cabos').insert([caboData]).select();
-      if (data && data[0]) {
-        await logInsert(user?.id, user?.email, 'cabos', data[0].id, formData.nome, caboData);
-      }
+      await supabase.from('cabos').insert([caboData]).select();
     }
 
     setFormData({ nome: '', tipo: 'fibra_optica', capacidade: '24', comprimento: '', descricao: '', cor: '#3B82F6' });
-    clearRoute();
     setIsAdding(false);
     loadCabos();
     window.dispatchEvent(new Event('cabos-updated'));
@@ -91,38 +76,21 @@ export function CaboForm() {
       descricao: cabo.descricao || '',
       cor: cabo.cor || '#3B82F6'
     });
-    setRoute(cabo.coordenadas || []);
     setEditingId(cabo.id);
     setIsAdding(true);
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Deseja realmente excluir este cabo?')) {
-      const cabo = cabos.find(c => c.id === id);
       await supabase.from('cabos').delete().eq('id', id);
-      if (cabo) {
-        await logDelete(user?.id, user?.email, 'cabos', id, cabo.nome, cabo);
-      }
       loadCabos();
     }
   };
 
   const handleCancel = () => {
     setFormData({ nome: '', tipo: 'fibra_optica', capacidade: '24', comprimento: '', descricao: '', cor: '#3B82F6' });
-    clearRoute();
-    if (isDrawing) {
-      stopDrawing();
-    }
     setIsAdding(false);
     setEditingId(null);
-  };
-
-  const handleToggleDrawing = () => {
-    if (isDrawing) {
-      stopDrawing();
-    } else {
-      startDrawing(currentRoute);
-    }
   };
 
   return (
@@ -207,44 +175,6 @@ export function CaboForm() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Rota no Mapa</label>
-            <button
-              type="button"
-              onClick={handleToggleDrawing}
-              className={`w-full px-4 py-3 border-2 rounded-lg transition flex items-center justify-center gap-2 ${
-                isDrawing
-                  ? 'border-green-500 bg-green-50 text-green-700'
-                  : 'border-slate-300 hover:border-blue-500 hover:bg-blue-50 text-slate-700'
-              }`}
-            >
-              {isDrawing ? (
-                <>
-                  <MapPin className="w-5 h-5" />
-                  <span>Desenhando rota... ({currentRoute.length} pontos)</span>
-                </>
-              ) : (
-                <>
-                  <Map className="w-5 h-5 text-blue-600" />
-                  <span>
-                    {currentRoute.length > 0
-                      ? `Rota definida (${currentRoute.length} pontos) - Clique para editar`
-                      : 'Desenhar rota no mapa principal'}
-                  </span>
-                </>
-              )}
-            </button>
-            {currentRoute.length > 0 && !isDrawing && (
-              <button
-                type="button"
-                onClick={clearRoute}
-                className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
-              >
-                Limpar rota
-              </button>
-            )}
-          </div>
-
           <div className="flex gap-2">
             <button
               type="submit"
@@ -273,12 +203,6 @@ export function CaboForm() {
                   {cabo.tipo.replace('_', ' ')} • {cabo.capacidade} fibras
                   {cabo.comprimento && ` • ${cabo.comprimento}m`}
                 </p>
-                {cabo.coordenadas && cabo.coordenadas.length > 0 && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <Map className="w-3 h-3 text-blue-600" />
-                    <span className="text-xs text-blue-600">Rota no mapa ({cabo.coordenadas.length} pontos)</span>
-                  </div>
-                )}
                 {cabo.descricao && (
                   <p className="text-xs text-slate-500 mt-1">{cabo.descricao}</p>
                 )}

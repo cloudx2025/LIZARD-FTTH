@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, Cable, Box, Wifi, LogOut, X, Settings } from 'lucide-react';
+import { MapPin, Cable, Box, Wifi, LogOut, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { PopForm } from './forms/PopForm';
 import { CaboForm } from './forms/CaboForm';
@@ -8,14 +8,9 @@ import { FibraManager } from './forms/FibraManager';
 
 type ActiveForm = 'pop' | 'cabo' | 'cto' | 'fibra' | null;
 
-interface SidebarProps {
-  onNavigate: (view: 'map' | 'settings') => void;
-  currentView: 'map' | 'settings';
-}
-
-export function Sidebar({ onNavigate, currentView }: SidebarProps) {
+export function Sidebar() {
   const [activeForm, setActiveForm] = useState<ActiveForm>(null);
-  const { signOut, userRole } = useAuth();
+  const { signOut } = useAuth();
 
   const handleLogout = async () => {
     await signOut();
@@ -77,23 +72,6 @@ export function Sidebar({ onNavigate, currentView }: SidebarProps) {
         </div>
 
         <div className="space-y-4">
-          {userRole === 'admin' && (
-            <button
-              onClick={() => {
-                setActiveForm(null);
-                onNavigate(currentView === 'settings' ? 'map' : 'settings');
-              }}
-              className={`p-3 rounded-lg transition ${
-                currentView === 'settings'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
-              title="Configurações"
-            >
-              <Settings className="w-6 h-6" />
-            </button>
-          )}
-
           <button
             onClick={handleLogout}
             className="p-3 rounded-lg text-slate-400 hover:bg-red-600 hover:text-white transition"

@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
-import { logInsert, logUpdate, logDelete } from '../../lib/auditLogger';
 
 interface Cabo {
   id: string;
@@ -39,7 +37,6 @@ export function FibraManager() {
   const [selectedCabo, setSelectedCabo] = useState<string>('');
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     numero: '',
@@ -90,15 +87,10 @@ export function FibraManager() {
     };
 
     if (editingId) {
-      const oldFibra = fibras.find(f => f.id === editingId);
       await supabase.from('fibras').update(fibraData).eq('id', editingId);
-      await logUpdate(user?.id, user?.email, 'fibras', editingId, `Fibra #${formData.numero}`, oldFibra, fibraData);
       setEditingId(null);
     } else {
-      const { data } = await supabase.from('fibras').insert([fibraData]).select();
-      if (data && data[0]) {
-        await logInsert(user?.id, user?.email, 'fibras', data[0].id, `Fibra #${formData.numero}`, fibraData);
-      }
+      await supabase.from('fibras').insert([fibraData]).select();
     }
 
     setFormData({
@@ -124,11 +116,7 @@ export function FibraManager() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Deseja realmente excluir esta fibra?')) {
-      const fibra = fibras.find(f => f.id === id);
       await supabase.from('fibras').delete().eq('id', id);
-      if (fibra) {
-        await logDelete(user?.id, user?.email, 'fibras', id, `Fibra #${fibra.numero}`, fibra);
-      }
       loadFibras();
     }
   };

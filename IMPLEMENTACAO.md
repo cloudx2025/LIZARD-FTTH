@@ -1,356 +1,179 @@
-# Documentação de Implementação - Sistema de Rede
+# Sistema de Rede - Versão 5
 
-## Resumo das Implementações
+## Visão Geral
 
-Este documento detalha todas as funcionalidades implementadas no sistema de documentação de rede com mapa interativo.
-
----
-
-## 1. Editor de Rotas Avançado
-
-### Funcionalidade
-Sistema completo para desenhar e editar rotas manualmente no mapa com funcionalidades profissionais.
-
-### Recursos Implementados
-- **Modo Desenho**: Clique no mapa para adicionar pontos
-- **Modo Edição**: Arraste pontos para reposicionar
-- **Adicionar Pontos**: Clique nos pontos verdes (midpoints) para adicionar ponto entre dois existentes
-- **Remover Pontos**: Clique com botão direito em um ponto para removê-lo
-- **Controles**: Desfazer, Limpar Tudo, Salvar, Cancelar
-- **Visualização em tempo real**: A rota é desenhada conforme você adiciona pontos
-
-### Como Usar
-1. Ao cadastrar ou editar um Cabo, clique em "Desenhar rota no mapa"
-2. O Editor Avançado será aberto
-3. Clique no mapa para adicionar pontos da rota
-4. Arraste pontos brancos para ajustar posição
-5. Clique em pontos verdes para adicionar pontos intermediários
-6. Clique com botão direito em um ponto para removê-lo
-7. Clique em "Salvar Rota" para confirmar
-
-### Arquivos
-- `/src/components/forms/AdvancedRouteEditor.tsx` - Componente principal
-- `/src/components/forms/CaboForm.tsx` - Integração com formulário de cabos
+Este é um sistema simplificado de documentação de rede de fibra óptica com mapa interativo. A Versão 5 foca nas funcionalidades essenciais sem recursos administrativos avançados.
 
 ---
 
-## 2. Ícones Simplificados
+## Funcionalidades Principais
 
-### Funcionalidade
-Sistema de ícones padronizado com apenas 2 tipos, conforme solicitado.
+### 1. Autenticação
+- Login e registro de usuários
+- Gerenciamento de sessão
+- Logout seguro
 
-### Tipos de Ícone
-1. **Datacenter (POPs)**: Ícone de servidor em camadas, cor configurável (padrão verde #10B981)
-2. **Pin (CTOs)**: Ícone de marcador de localização, cor configurável (padrão laranja #F59E0B)
+### 2. Gerenciamento de POPs (Points of Presence)
+- Cadastro, edição e exclusão de POPs
+- Campos: nome, latitude, longitude, endereço, descrição
+- Ícone: Datacenter (cor verde padrão)
 
-### Implementação
-- POPs sempre usam o ícone de Datacenter
-- CTOs sempre usam o ícone de Pin
-- Cores são configuráveis pelo administrador
-- Ícones SVG customizados renderizados diretamente
+### 3. Gerenciamento de Cabos
+- Cadastro, edição e exclusão de cabos de fibra óptica
+- Tipos: Fibra Óptica, Coaxial, Par Trançado
+- Campos: nome, tipo, capacidade, comprimento, descrição, cor
+- Visualização no mapa como linhas coloridas
 
-### Arquivos
-- `/src/lib/mapIcons.ts` - Funções de criação de ícones
-- `/src/components/MapView.tsx` - Uso dos ícones no mapa
+### 4. Gerenciamento de CTOs (Customer Terminal Objects)
+- Cadastro, edição e exclusão de CTOs
+- Campos: nome, latitude, longitude, capacidade, endereço, status
+- Ícone: Pin de localização (cor laranja padrão)
 
----
+### 5. Gerenciamento de Fibras
+- Gerenciamento individual de fibras dentro de cada cabo
+- 12 cores padrão de fibras
+- Status: Livre, Em Uso, Reservada
+- Atribuição de cliente para fibras em uso
 
-## 3. Configuração de Cores
+### 6. Gerenciamento de Conexões CTO
+- Conexões entre CTOs
+- Campos: nome, CTO origem, CTO destino, cor, status
+- Visualização no mapa como linhas tracejadas
 
-### Funcionalidade
-Interface para personalizar as cores dos ícones de POP e CTO no mapa.
-
-### Recursos
-- **Color Picker**: Seletor visual de cores
-- **Input Manual**: Digite o código hexadecimal da cor
-- **Salvar**: Persiste as configurações no banco de dados
-- **Aplicação Automática**: Cores são carregadas automaticamente ao abrir o mapa
-
-### Como Usar
-1. Acesse **Administração → Configurações**
-2. Na seção "Cores dos Ícones", escolha as cores desejadas
-3. Clique em "Salvar Cores"
-4. O mapa será recarregado com as novas cores
-
-### Persistência
-As cores são armazenadas na tabela `system_settings` com as chaves:
-- `pop_color`: Cor dos POPs
-- `cto_color`: Cor dos CTOs
-
-### Arquivos
-- `/src/components/admin/SystemSettings.tsx` - Interface de configuração
-- Migration: `add_system_configurations_and_security.sql`
+### 7. Mapa Interativo
+- Visualização de todos os elementos no mapa
+- Duas camadas: Mapa Padrão (OpenStreetMap) e Satélite
+- Marcadores clicáveis com informações em popups
+- Zoom automático para ajustar aos POPs cadastrados
 
 ---
 
-## 4. Menu de Administração Completo
+## Estrutura do Projeto
 
-### Funcionalidade
-Painel administrativo centralizado com 4 abas principais.
+### Componentes Principais
 
-### 4.1 Configurações
-- Personalização de cores dos ícones
-- Backup e restore de configurações
-- Exportar configurações em JSON
-- Importar configurações de backup
-
-### 4.2 Usuários
-- Criar novos usuários
-- Editar informações de usuários
-- Alterar permissões (admin, user)
-- Ativar/desativar usuários
-- Excluir usuários
-
-### 4.3 Auditoria
-- Visualizar todos os logs de ações do sistema
-- Filtrar por tipo de ação (INSERT, UPDATE, DELETE)
-- Filtrar por tabela afetada
-- Ver detalhes de cada alteração (antes/depois)
-- Identificar quem fez cada ação
-
-### 4.4 Segurança
-- Histórico de login (sucessos e falhas)
-- Endereço IP de cada acesso
-- User agent (navegador) usado
-- Filtros por status (todos, sucessos, falhas)
-- Exportar logs de segurança em CSV
-
-### Controle de Acesso
-- Apenas administradores podem acessar o painel
-- Usuários sem permissão veem mensagem de "Acesso Restrito"
-- Verificação automática de permissões usando hook `usePermissions`
-
-### Arquivos
-- `/src/components/AdminSettings.tsx` - Componente principal
-- `/src/components/admin/SystemSettings.tsx` - Configurações
-- `/src/components/admin/UserManagement.tsx` - Gestão de usuários
-- `/src/components/admin/AuditLogs.tsx` - Logs de auditoria
-- `/src/components/admin/SecurityLogs.tsx` - Logs de segurança
-- `/src/hooks/usePermissions.ts` - Hook de permissões
-
----
-
-## 5. Sistema de Backup e Restore
-
-### Funcionalidade
-Exportar e importar configurações do sistema.
-
-### Recursos de Backup
-- Exporta todas as configurações do sistema
-- Exporta perfis de usuários
-- Formato JSON legível
-- Nome do arquivo com data (backup-2026-01-08.json)
-
-### Recursos de Restore
-- Importa configurações de arquivo JSON
-- Confirmação antes de sobrescrever
-- Mantém integridade dos dados
-- Atualização automática após restore
-
-### Como Usar
-**Exportar:**
-1. Acesse Administração → Configurações
-2. Clique em "Exportar Configurações"
-3. Arquivo JSON será baixado automaticamente
-
-**Importar:**
-1. Acesse Administração → Configurações
-2. Clique em "Importar Configurações"
-3. Selecione o arquivo JSON de backup
-4. Confirme a restauração
-
----
-
-## 6. Estrutura do Banco de Dados
-
-### Novas Tabelas Criadas
-
-#### system_settings
-Armazena configurações globais do sistema.
-```sql
-- id (uuid)
-- key (text, unique)
-- value (jsonb)
-- description (text)
-- updated_at (timestamptz)
-- updated_by (uuid)
+```
+src/
+├── components/
+│   ├── Dashboard.tsx           # Layout principal
+│   ├── Login.tsx              # Tela de autenticação
+│   ├── MapView.tsx            # Visualização do mapa
+│   ├── Sidebar.tsx            # Navegação lateral
+│   └── forms/
+│       ├── CaboForm.tsx       # Formulário de cabos
+│       ├── CtoForm.tsx        # Formulário de CTOs
+│       ├── CtoConexaoForm.tsx # Formulário de conexões CTO
+│       ├── FibraManager.tsx   # Gerenciador de fibras
+│       └── PopForm.tsx        # Formulário de POPs
+├── contexts/
+│   └── AuthContext.tsx        # Contexto de autenticação
+└── lib/
+    ├── mapIcons.ts            # Ícones do mapa
+    └── supabase.ts            # Cliente Supabase
 ```
 
-#### login_history
-Registra tentativas de login.
-```sql
-- id (uuid)
-- user_id (uuid)
-- email (text)
-- success (boolean)
-- ip_address (text)
-- user_agent (text)
-- created_at (timestamptz)
-```
+### Banco de Dados
 
-### Tabelas Atualizadas
+#### Tabelas
 
-#### user_profiles
-Novos campos para segurança:
-```sql
-- last_login (timestamptz)
-- login_attempts (integer)
-- locked_until (timestamptz)
-```
+1. **pops** - Points of Presence
+   - id, nome, latitude, longitude, endereco, descricao, icone, created_at, created_by
 
----
+2. **cabos** - Cabos de fibra óptica
+   - id, nome, tipo, capacidade, comprimento, descricao, cor, coordenadas, status, created_at, created_by
 
-## 7. Segurança e Permissões
+3. **ctos** - Customer Terminal Objects
+   - id, nome, latitude, longitude, capacidade, endereco, status, icone, cabo_id, created_at, created_by
 
-### Níveis de Permissão
-- **admin**: Acesso total ao sistema
-- **user**: Acesso básico (sem administração)
+4. **fibras** - Fibras individuais
+   - id, cabo_id, numero, cor, status, cliente, created_at
 
-### Row Level Security (RLS)
-Todas as tabelas possuem RLS habilitado:
-- Usuários só veem seus próprios dados
-- Administradores têm acesso completo
-- Logs são protegidos (apenas admins)
+5. **cto_conexoes** - Conexões entre CTOs
+   - id, nome, cto_origem_id, cto_destino_id, cor, coordenadas, status, created_at, created_by
 
-### Auditoria Automática
-Todas as ações importantes são registradas:
-- Criação de registros (INSERT)
-- Edição de registros (UPDATE)
-- Exclusão de registros (DELETE)
-- Usuário responsável pela ação
-- Data/hora da ação
-- Dados antes e depois da alteração
+6. **user_profiles** - Perfis de usuários
+   - id, email, full_name, role, is_active, created_at, updated_at
 
 ---
 
-## 8. Variáveis de Ambiente
+## Cores Padrão
 
-O sistema usa as seguintes variáveis de ambiente (já configuradas):
-
-```env
-VITE_SUPABASE_URL=<sua_url_supabase>
-VITE_SUPABASE_ANON_KEY=<sua_chave_supabase>
-```
-
-Essas variáveis estão no arquivo `.env` e **não devem ser modificadas** a menos que você esteja mudando de instância do Supabase.
+- **POPs**: Verde (#10B981)
+- **CTOs**: Laranja (#F59E0B)
+- **Cabos**: Azul (#3B82F6)
 
 ---
 
-## 9. Como Usar o Sistema
+## Como Usar
 
-### Para Administradores
+### 1. Login
+- Acesse o sistema com email e senha
+- Cadastre-se se for novo usuário
 
-1. **Configurar Cores**
-   - Acesse Administração → Configurações
-   - Escolha as cores desejadas
-   - Salve as alterações
+### 2. Adicionar POPs
+- Clique no ícone de Pin na barra lateral
+- Preencha nome, coordenadas e endereço
+- Clique em Salvar
 
-2. **Gerenciar Usuários**
-   - Acesse Administração → Usuários
-   - Crie, edite ou remova usuários
-   - Altere permissões conforme necessário
+### 3. Adicionar Cabos
+- Clique no ícone de Cabo na barra lateral
+- Preencha os dados do cabo
+- Escolha uma cor personalizada se desejar
+- Salve o cabo
 
-3. **Monitorar Sistema**
-   - Acesse Administração → Auditoria (ver alterações)
-   - Acesse Administração → Segurança (ver acessos)
+### 4. Adicionar CTOs
+- Clique no ícone de Caixa na barra lateral
+- Preencha os dados da CTO
+- Associe a um cabo se necessário
+- Salve a CTO
 
-4. **Fazer Backup**
-   - Acesse Administração → Configurações
-   - Clique em "Exportar Configurações"
-   - Guarde o arquivo JSON em local seguro
+### 5. Gerenciar Fibras
+- Clique no ícone de WiFi na barra lateral
+- Selecione um cabo
+- Adicione fibras com número, cor e status
+- Atribua cliente se a fibra estiver em uso
 
-### Para Usuários
-
-1. **Adicionar POPs/CTOs**
-   - Use os formulários na lateral
-   - Os ícones serão automaticamente corretos
-
-2. **Desenhar Rotas de Cabos**
-   - Ao cadastrar cabo, clique em "Desenhar rota no mapa"
-   - Use o editor avançado para traçar a rota
-   - Salve a rota
-
-3. **Visualizar Mapa**
-   - POPs aparecem como ícone de Datacenter (configurável)
-   - CTOs aparecem como ícone de Pin (configurável)
-   - Rotas aparecem como linhas conectando os pontos
+### 6. Visualizar no Mapa
+- Todos os elementos aparecem automaticamente no mapa
+- Clique nos marcadores para ver informações
+- Alterne entre mapa padrão e satélite no controle superior direito
 
 ---
 
-## 10. Arquivos Principais
+## Compilação
 
-### Componentes Novos
-```
-/src/components/admin/SystemSettings.tsx - Configurações do sistema
-/src/components/admin/SecurityLogs.tsx - Logs de segurança
-/src/components/forms/AdvancedRouteEditor.tsx - Editor de rotas
-/src/hooks/usePermissions.ts - Hook de permissões
-```
-
-### Componentes Atualizados
-```
-/src/components/AdminSettings.tsx - Painel administrativo
-/src/components/MapView.tsx - Visualização do mapa
-/src/components/forms/CaboForm.tsx - Formulário de cabos
-/src/components/forms/PopForm.tsx - Formulário de POPs
-/src/components/forms/CtoForm.tsx - Formulário de CTOs
-/src/lib/mapIcons.ts - Sistema de ícones simplificado
-```
-
-### Migrations
-```
-/supabase/migrations/add_system_configurations_and_security.sql
-```
-
----
-
-## 11. Compilação e Deploy
-
-### Build do Projeto
 ```bash
 npm run build
 ```
 
-O projeto compila com sucesso e gera os arquivos otimizados na pasta `dist/`.
-
-### Deploy
-Após o build, faça deploy da pasta `dist/` no seu servidor web ou plataforma de hospedagem.
+O projeto compila com sucesso e gera os arquivos na pasta `dist/`.
 
 ---
 
-## 12. Suporte e Manutenção
+## Tecnologias
 
-### Logs de Erro
-Em caso de problemas, verifique:
-1. Console do navegador (F12)
-2. Logs de auditoria no sistema
-3. Logs de segurança no sistema
+- **Frontend**: React + TypeScript + Vite
+- **Mapa**: Leaflet + React Leaflet
+- **Banco de Dados**: Supabase (PostgreSQL)
+- **Estilização**: Tailwind CSS
+- **Ícones**: Lucide React
 
-### Backup Regular
-Recomenda-se fazer backup das configurações:
-- Semanalmente para ambientes de produção
-- Antes de grandes mudanças no sistema
+---
 
-### Atualizações Futuras
-O sistema foi projetado para ser extensível:
-- Novos tipos de equipamentos podem ser adicionados
-- Novas configurações podem ser criadas na tabela `system_settings`
-- Novos logs podem ser adicionados conforme necessário
+## O que foi Removido da Versão Anterior
+
+Esta versão 5 é uma simplificação que removeu:
+- Sistema de desenho avançado de rotas
+- Painel administrativo
+- Configurações de sistema
+- Gestão de usuários e permissões
+- Sistema de auditoria
+- Logs de segurança
+- Backup e restore
+- Cores configuráveis (agora são fixas)
 
 ---
 
 ## Conclusão
 
-Todas as funcionalidades solicitadas foram implementadas e testadas:
-✅ Editor de rotas avançado com edição completa
-✅ Ícones simplificados (apenas Datacenter e Pin)
-✅ Configuração de cores personalizáveis
-✅ Menu de administração completo
-✅ Gestão de usuários e permissões
-✅ Sistema de auditoria detalhado
-✅ Logs de segurança
-✅ Backup e restore de configurações
-✅ Controle de acesso por permissão
-✅ Build bem-sucedido
-
-O sistema está pronto para uso em produção!
+A Versão 5 é focada em simplicidade e funcionalidades essenciais para documentação de rede de fibra óptica. Todas as operações básicas de CRUD estão disponíveis com visualização em mapa interativo.
