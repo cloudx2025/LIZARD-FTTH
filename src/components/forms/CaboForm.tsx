@@ -13,6 +13,7 @@ interface Cabo {
   comprimento: number | null;
   descricao: string | null;
   coordenadas: [number, number][] | null;
+  cor: string;
 }
 
 export function CaboForm() {
@@ -27,7 +28,8 @@ export function CaboForm() {
     tipo: 'fibra_optica',
     capacidade: '24',
     comprimento: '',
-    descricao: ''
+    descricao: '',
+    cor: '#3B82F6'
   });
 
   useEffect(() => {
@@ -57,6 +59,7 @@ export function CaboForm() {
       comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
       descricao: formData.descricao || null,
       coordenadas: currentRoute.length > 0 ? currentRoute : null,
+      cor: formData.cor,
       created_by: user?.id
     };
 
@@ -72,10 +75,11 @@ export function CaboForm() {
       }
     }
 
-    setFormData({ nome: '', tipo: 'fibra_optica', capacidade: '24', comprimento: '', descricao: '' });
+    setFormData({ nome: '', tipo: 'fibra_optica', capacidade: '24', comprimento: '', descricao: '', cor: '#3B82F6' });
     clearRoute();
     setIsAdding(false);
     loadCabos();
+    window.dispatchEvent(new Event('cabos-updated'));
   };
 
   const handleEdit = (cabo: Cabo) => {
@@ -84,7 +88,8 @@ export function CaboForm() {
       tipo: cabo.tipo,
       capacidade: cabo.capacidade.toString(),
       comprimento: cabo.comprimento?.toString() || '',
-      descricao: cabo.descricao || ''
+      descricao: cabo.descricao || '',
+      cor: cabo.cor || '#3B82F6'
     });
     setRoute(cabo.coordenadas || []);
     setEditingId(cabo.id);
@@ -103,7 +108,7 @@ export function CaboForm() {
   };
 
   const handleCancel = () => {
-    setFormData({ nome: '', tipo: 'fibra_optica', capacidade: '24', comprimento: '', descricao: '' });
+    setFormData({ nome: '', tipo: 'fibra_optica', capacidade: '24', comprimento: '', descricao: '', cor: '#3B82F6' });
     clearRoute();
     if (isDrawing) {
       stopDrawing();
@@ -170,15 +175,26 @@ export function CaboForm() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Comprimento (metros)</label>
-            <input
-              type="number"
-              value={formData.comprimento}
-              onChange={(e) => setFormData({ ...formData, comprimento: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              step="0.01"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Comprimento (m)</label>
+              <input
+                type="number"
+                value={formData.comprimento}
+                onChange={(e) => setFormData({ ...formData, comprimento: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Cor da Rota</label>
+              <input
+                type="color"
+                value={formData.cor}
+                onChange={(e) => setFormData({ ...formData, cor: e.target.value })}
+                className="w-full h-10 border border-slate-300 rounded-lg cursor-pointer"
+              />
+            </div>
           </div>
 
           <div>

@@ -159,6 +159,22 @@ export function MapView() {
   useEffect(() => {
     loadData();
     loadColors();
+
+    const handleCabosUpdate = () => {
+      loadData();
+    };
+
+    const handleCtoUpdate = () => {
+      loadData();
+    };
+
+    window.addEventListener('cabos-updated', handleCabosUpdate);
+    window.addEventListener('cto-conexoes-updated', handleCtoUpdate);
+
+    return () => {
+      window.removeEventListener('cabos-updated', handleCabosUpdate);
+      window.removeEventListener('cto-conexoes-updated', handleCtoUpdate);
+    };
   }, []);
 
   const loadColors = async () => {

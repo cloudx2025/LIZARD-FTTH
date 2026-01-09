@@ -89,6 +89,7 @@ export function CtoConexaoForm() {
     clearRoute();
     setIsAdding(false);
     loadData();
+    window.dispatchEvent(new Event('cto-conexoes-updated'));
   };
 
   const handleEdit = (conexao: CtoConexao) => {
