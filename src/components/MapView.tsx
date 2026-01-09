@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, LayersControl, useMapEvents, Circle } from 'react-leaflet';
 import { LatLngExpression } from 'leaflet';
 import { supabase } from '../lib/supabase';
-import { getPOPIcon, getCTOIcon } from '../lib/mapIcons';
+import { getPopIcon, getCtoIcon } from '../lib/mapIcons';
 import { useRouteDrawing } from '../contexts/RouteDrawingContext';
 import { Undo2, Trash2, Check } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
@@ -335,7 +335,7 @@ export function MapView() {
         <Marker
           key={pop.id}
           position={[pop.latitude, pop.longitude]}
-          icon={getPOPIcon(popColor)}
+          icon={getPopIcon(popColor)}
         >
           <Popup>
             <div className="font-semibold" style={{ color: popColor }}>{pop.nome}</div>
@@ -385,7 +385,7 @@ export function MapView() {
         <Marker
           key={cto.id}
           position={[cto.latitude, cto.longitude]}
-          icon={getCTOIcon(ctoColor)}
+          icon={getCtoIcon(ctoColor)}
         >
           <Popup>
             <div className="font-semibold" style={{ color: ctoColor }}>{cto.nome}</div>

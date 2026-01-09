@@ -47,20 +47,20 @@ const createPinIcon = (color: string, strokeColor: string) => {
   });
 };
 
-const popIcons: Record<string, DivIcon> = {
-  datacenter: createDatacenterIcon('#2563eb', '#1e40af'),
-  pin: createPinIcon('#2563eb', '#1e40af')
+const adjustColor = (color: string, amount: number): string => {
+  const num = parseInt(color.replace('#', ''), 16);
+  const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+  const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+  const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+  return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
 };
 
-const ctoIcons: Record<string, DivIcon> = {
-  datacenter: createDatacenterIcon('#dc2626', '#991b1b'),
-  pin: createPinIcon('#dc2626', '#991b1b')
+export const getPopIcon = (color: string = '#2563eb', iconType: string = 'datacenter'): DivIcon => {
+  const strokeColor = adjustColor(color, -30);
+  return iconType === 'pin' ? createPinIcon(color, strokeColor) : createDatacenterIcon(color, strokeColor);
 };
 
-export const getPopIcon = (iconType: string = 'datacenter'): DivIcon => {
-  return popIcons[iconType] || popIcons.datacenter;
-};
-
-export const getCtoIcon = (iconType: string = 'datacenter'): DivIcon => {
-  return ctoIcons[iconType] || ctoIcons.datacenter;
+export const getCtoIcon = (color: string = '#dc2626', iconType: string = 'datacenter'): DivIcon => {
+  const strokeColor = adjustColor(color, -30);
+  return iconType === 'pin' ? createPinIcon(color, strokeColor) : createDatacenterIcon(color, strokeColor);
 };
