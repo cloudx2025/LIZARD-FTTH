@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Tooltip, LayersControl } from 'react-leaflet';
 import { LatLngExpression } from 'leaflet';
 import { supabase } from '../lib/supabase';
 import { RouteDrawer } from './RouteDrawer';
 import { getPopIcon, getCtoIcon } from '../lib/mapIcons';
 import 'leaflet/dist/leaflet.css';
+
+const { BaseLayer } = LayersControl;
 
 interface POP {
   id: string;
@@ -82,12 +84,24 @@ export function MapViewWithDrawing({ isDrawingRoute, drawingColor, existingRoute
   const [cabos, setCabos] = useState<Cabo[]>([]);
   const [ctoConexoes, setCtoConexoes] = useState<CtoConexao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cableColor, setCableColor] = useState('#3B82F6');
 
   const defaultCenter: LatLngExpression = [-15.7801, -47.9292];
 
   useEffect(() => {
     loadData();
+    loadColors();
   }, []);
+
+  const loadColors = async () => {
+    const { data: cableColorData } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'cable_color')
+      .maybeSingle();
+
+    if (cableColorData?.value) setCableColor(cableColorData.value as string);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -173,10 +187,21 @@ export function MapViewWithDrawing({ isDrawingRoute, drawingColor, existingRoute
         style={{ height: '100%', width: '100%' }}
         className="z-0"
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <LayersControl position="topright">
+          <BaseLayer checked name="Mapa Padrão">
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+          </BaseLayer>
+          <BaseLayer name="Satélite">
+            <TileLayer
+              attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              maxZoom={19}
+            />
+          </BaseLayer>
+        </LayersControl>
 
         <MapUpdater pops={pops} />
 
@@ -212,7 +237,7 @@ export function MapViewWithDrawing({ isDrawingRoute, drawingColor, existingRoute
               <Polyline
                 key={cabo.id}
                 positions={positions}
-                color={cabo.cor}
+                color={cabo.cor || cableColor}
                 weight={4}
                 opacity={0.7}
                 eventHandlers={{
@@ -257,7 +282,7 @@ export function MapViewWithDrawing({ isDrawingRoute, drawingColor, existingRoute
               <Polyline
                 key={conexao.id}
                 positions={positions}
-                color={conexao.cor}
+                color={conexao.cor || cableColor}
                 weight={3}
                 opacity={0.6}
                 dashArray="10, 10"

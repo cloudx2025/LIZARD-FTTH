@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 export function SystemSettings() {
   const [popColor, setPopColor] = useState('#10B981');
   const [ctoColor, setCtoColor] = useState('#F59E0B');
+  const [cableColor, setCableColor] = useState('#3B82F6');
   const [saving, setSaving] = useState(false);
   const { user } = useAuth();
 
@@ -17,12 +18,13 @@ export function SystemSettings() {
     const { data: settings } = await supabase
       .from('system_settings')
       .select('*')
-      .in('key', ['pop_color', 'cto_color']);
+      .in('key', ['pop_color', 'cto_color', 'cable_color']);
 
     if (settings) {
       settings.forEach(setting => {
         if (setting.key === 'pop_color') setPopColor(setting.value as string);
         if (setting.key === 'cto_color') setCtoColor(setting.value as string);
+        if (setting.key === 'cable_color') setCableColor(setting.value as string);
       });
     }
   };
@@ -39,6 +41,11 @@ export function SystemSettings() {
         .from('system_settings')
         .update({ value: ctoColor, updated_by: user?.id })
         .eq('key', 'cto_color');
+
+      await supabase
+        .from('system_settings')
+        .update({ value: cableColor, updated_by: user?.id })
+        .eq('key', 'cable_color');
 
       alert('Configurações salvas com sucesso!');
       window.location.reload();
@@ -155,6 +162,27 @@ export function SystemSettings() {
                 onChange={(e) => setCtoColor(e.target.value)}
                 className="px-3 py-2 border border-slate-300 rounded-lg flex-1 max-w-xs"
                 placeholder="#F59E0B"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Cor Padrão dos Cabos/Rotas
+            </label>
+            <div className="flex gap-3 items-center">
+              <input
+                type="color"
+                value={cableColor}
+                onChange={(e) => setCableColor(e.target.value)}
+                className="w-20 h-10 rounded border border-slate-300 cursor-pointer"
+              />
+              <input
+                type="text"
+                value={cableColor}
+                onChange={(e) => setCableColor(e.target.value)}
+                className="px-3 py-2 border border-slate-300 rounded-lg flex-1 max-w-xs"
+                placeholder="#3B82F6"
               />
             </div>
           </div>
