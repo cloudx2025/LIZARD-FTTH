@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, LayersControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, LayersControl, useMapEvents, Circle } from 'react-leaflet';
 import { LatLngExpression } from 'leaflet';
 import { supabase } from '../lib/supabase';
 import { getPOPIcon, getCTOIcon } from '../lib/mapIcons';
+import { useRouteDrawing } from '../contexts/RouteDrawingContext';
+import { Undo2, Trash2, Check } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
 const { BaseLayer } = LayersControl;
@@ -69,6 +71,78 @@ function MapUpdater({ pops }: { pops: POP[] }) {
   return null;
 }
 
+function DrawingHandler() {
+  const { isDrawing, addPoint } = useRouteDrawing();
+
+  useMapEvents({
+    click(e) {
+      if (isDrawing) {
+        addPoint([e.latlng.lat, e.latlng.lng]);
+      }
+    },
+  });
+
+  return null;
+}
+
+function DrawingControls() {
+  const { isDrawing, currentRoute, removePoint, clearRoute, stopDrawing } = useRouteDrawing();
+
+  if (!isDrawing) return null;
+
+  return (
+    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-white rounded-lg shadow-lg p-4 max-w-md">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-slate-800">Desenhando Rota</h3>
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">
+              {currentRoute.length} pontos
+            </span>
+          </div>
+        </div>
+
+        <div className="text-sm text-slate-600 space-y-1">
+          <p>• Clique no mapa para adicionar pontos</p>
+          <p>• Arraste pontos brancos para mover</p>
+          <p>• Clique nos pontos verdes para adicionar ponto no meio</p>
+          <p>• Clique com botão direito para remover ponto</p>
+        </div>
+
+        <div className="flex gap-2">
+          {currentRoute.length > 0 && (
+            <>
+              <button
+                onClick={() => removePoint(currentRoute.length - 1)}
+                className="flex-1 px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition flex items-center justify-center gap-2 text-sm"
+                title="Desfazer último ponto"
+              >
+                <Undo2 className="w-4 h-4" />
+                Desfazer
+              </button>
+              <button
+                onClick={clearRoute}
+                className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition flex items-center justify-center gap-2 text-sm"
+                title="Limpar rota"
+              >
+                <Trash2 className="w-4 h-4" />
+                Limpar
+              </button>
+            </>
+          )}
+          <button
+            onClick={stopDrawing}
+            className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 text-sm"
+          >
+            <Check className="w-4 h-4" />
+            Concluir
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MapView() {
   const [pops, setPops] = useState<POP[]>([]);
   const [ctos, setCtos] = useState<CTO[]>([]);
@@ -78,6 +152,7 @@ export function MapView() {
   const [popColor, setPopColor] = useState('#10B981');
   const [ctoColor, setCtoColor] = useState('#F59E0B');
   const [cableColor, setCableColor] = useState('#3B82F6');
+  const { isDrawing, currentRoute, removePoint } = useRouteDrawing();
 
   const defaultCenter: LatLngExpression = [-15.7801, -47.9292];
 
@@ -173,30 +248,36 @@ export function MapView() {
     );
   }
 
-  return (
-    <MapContainer
-      center={defaultCenter}
-      zoom={13}
-      style={{ height: '100%', width: '100%' }}
-      className="z-0"
-    >
-      <LayersControl position="topright">
-        <BaseLayer checked name="Mapa Padrão">
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-        </BaseLayer>
-        <BaseLayer name="Satélite">
-          <TileLayer
-            attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            maxZoom={19}
-          />
-        </BaseLayer>
-      </LayersControl>
+  const handlePointRightClick = (index: number) => {
+    removePoint(index);
+  };
 
-      <MapUpdater pops={pops} />
+  return (
+    <div className="relative h-full w-full">
+      <MapContainer
+        center={defaultCenter}
+        zoom={13}
+        style={{ height: '100%', width: '100%' }}
+        className="z-0"
+      >
+        <LayersControl position="topright">
+          <BaseLayer checked name="Mapa Padrão">
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+          </BaseLayer>
+          <BaseLayer name="Satélite">
+            <TileLayer
+              attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              maxZoom={19}
+            />
+          </BaseLayer>
+        </LayersControl>
+
+        <MapUpdater pops={pops} />
+        <DrawingHandler />
 
       {cabos.map((cabo) => {
         let positions: LatLngExpression[] = [];
@@ -298,6 +379,35 @@ export function MapView() {
           </Popup>
         </Marker>
       ))}
+
+      {isDrawing && currentRoute.length > 0 && (
+        <>
+          <Polyline
+            positions={currentRoute}
+            color="#3B82F6"
+            weight={4}
+            opacity={0.7}
+          />
+          {currentRoute.map((point, index) => (
+            <Circle
+              key={`draw-point-${index}`}
+              center={point}
+              radius={5}
+              pathOptions={{
+                color: '#ffffff',
+                fillColor: '#3B82F6',
+                fillOpacity: 1,
+                weight: 2
+              }}
+              eventHandlers={{
+                contextmenu: () => handlePointRightClick(index)
+              }}
+            />
+          ))}
+        </>
+      )}
     </MapContainer>
+    <DrawingControls />
+    </div>
   );
 }

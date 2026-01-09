@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, Map } from 'lucide-react';
+import { Plus, Trash2, Edit2, Map, MapPin } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRouteDrawing } from '../../contexts/RouteDrawingContext';
 import { logInsert, logUpdate, logDelete } from '../../lib/auditLogger';
 
 interface CTO {
@@ -19,17 +20,13 @@ interface CtoConexao {
   coordenadas: any;
 }
 
-interface CtoConexaoFormProps {
-  onDrawRoute?: (conexaoId: string | null, color: string, existingRoute?: [number, number][]) => void;
-}
-
-export function CtoConexaoForm({ onDrawRoute }: CtoConexaoFormProps) {
+export function CtoConexaoForm() {
   const [conexoes, setConexoes] = useState<CtoConexao[]>([]);
   const [ctos, setCtos] = useState<CTO[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [routeCoords, setRouteCoords] = useState<[number, number][] | null>(null);
   const { user } = useAuth();
+  const { isDrawing, currentRoute, startDrawing, stopDrawing, setRoute, clearRoute } = useRouteDrawing();
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -53,26 +50,19 @@ export function CtoConexaoForm({ onDrawRoute }: CtoConexaoFormProps) {
     if (ctosResult.data) setCtos(ctosResult.data);
   };
 
-  const handleDrawRoute = () => {
-    const existingRoute = routeCoords || undefined;
-    onDrawRoute?.(editingId, formData.cor, existingRoute);
-  };
-
-  const handleRouteComplete = (coordinates: [number, number][]) => {
-    setRouteCoords(coordinates);
-  };
-
-  (window as any).handleCtoRouteComplete = handleRouteComplete;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isDrawing) {
+      stopDrawing();
+    }
 
     const conexaoData = {
       nome: formData.nome,
       cto_origem_id: formData.cto_origem_id || null,
       cto_destino_id: formData.cto_destino_id || null,
       cor: formData.cor,
-      coordenadas: routeCoords ? JSON.stringify(routeCoords) : null,
+      coordenadas: currentRoute.length > 0 ? JSON.stringify(currentRoute) : null,
       status: formData.status,
       created_by: user?.id
     };
@@ -96,10 +86,9 @@ export function CtoConexaoForm({ onDrawRoute }: CtoConexaoFormProps) {
       cor: '#FF6600',
       status: 'ativo'
     });
-    setRouteCoords(null);
+    clearRoute();
     setIsAdding(false);
     loadData();
-    window.location.reload();
   };
 
   const handleEdit = (conexao: CtoConexao) => {
@@ -116,10 +105,12 @@ export function CtoConexaoForm({ onDrawRoute }: CtoConexaoFormProps) {
         const coords = typeof conexao.coordenadas === 'string'
           ? JSON.parse(conexao.coordenadas)
           : conexao.coordenadas;
-        setRouteCoords(coords);
+        setRoute(coords);
       } catch (e) {
-        setRouteCoords(null);
+        clearRoute();
       }
+    } else {
+      clearRoute();
     }
 
     setEditingId(conexao.id);
@@ -134,7 +125,6 @@ export function CtoConexaoForm({ onDrawRoute }: CtoConexaoFormProps) {
         await logDelete(user?.id, user?.email, 'cto_conexoes', id, conexao.nome, conexao);
       }
       loadData();
-      window.location.reload();
     }
   };
 
@@ -146,9 +136,20 @@ export function CtoConexaoForm({ onDrawRoute }: CtoConexaoFormProps) {
       cor: '#FF6600',
       status: 'ativo'
     });
-    setRouteCoords(null);
+    clearRoute();
+    if (isDrawing) {
+      stopDrawing();
+    }
     setIsAdding(false);
     setEditingId(null);
+  };
+
+  const handleToggleDrawing = () => {
+    if (isDrawing) {
+      stopDrawing();
+    } else {
+      startDrawing(currentRoute);
+    }
   };
 
   const getCtoName = (ctoId: string | null) => {
@@ -232,20 +233,43 @@ export function CtoConexaoForm({ onDrawRoute }: CtoConexaoFormProps) {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleDrawRoute}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition"
-          >
-            <Map className="w-5 h-5" />
-            {routeCoords ? 'Redesenhar Rota no Mapa' : 'Desenhar Rota no Mapa'}
-          </button>
-
-          {routeCoords && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-lg text-sm">
-              Rota definida com {routeCoords.length} pontos
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Rota no Mapa</label>
+            <button
+              type="button"
+              onClick={handleToggleDrawing}
+              className={`w-full px-4 py-3 border-2 rounded-lg transition flex items-center justify-center gap-2 ${
+                isDrawing
+                  ? 'border-green-500 bg-green-50 text-green-700'
+                  : 'border-slate-300 hover:border-orange-500 hover:bg-orange-50 text-slate-700'
+              }`}
+            >
+              {isDrawing ? (
+                <>
+                  <MapPin className="w-5 h-5" />
+                  <span>Desenhando rota... ({currentRoute.length} pontos)</span>
+                </>
+              ) : (
+                <>
+                  <Map className="w-5 h-5 text-orange-600" />
+                  <span>
+                    {currentRoute.length > 0
+                      ? `Rota definida (${currentRoute.length} pontos) - Clique para editar`
+                      : 'Desenhar rota no mapa principal'}
+                  </span>
+                </>
+              )}
+            </button>
+            {currentRoute.length > 0 && !isDrawing && (
+              <button
+                type="button"
+                onClick={clearRoute}
+                className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+              >
+                Limpar rota
+              </button>
+            )}
+          </div>
 
           <div className="flex gap-2">
             <button
